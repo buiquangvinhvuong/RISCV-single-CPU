@@ -1,0 +1,71 @@
+D:/nhomfap/Test_bench.v {1 {vlog -work work -stats=none D:/nhomfap/Test_bench.v
+Model Technology ModelSim - Intel FPGA Edition vlog 2020.1 Compiler 2020.02 Feb 28 2020
+-- Compiling module tb_top
+
+Top level modules:
+	tb_top
+
+} {} {}} D:/nhomfap/Program_counter.v {1 {vlog -work work -stats=none D:/nhomfap/Program_counter.v
+Model Technology ModelSim - Intel FPGA Edition vlog 2020.1 Compiler 2020.02 Feb 28 2020
+-- Compiling module Program_counter
+
+Top level modules:
+	Program_counter
+
+} {} {}} D:/nhomfap/PCplus4.v {1 {vlog -work work -stats=none D:/nhomfap/PCplus4.v
+Model Technology ModelSim - Intel FPGA Edition vlog 2020.1 Compiler 2020.02 Feb 28 2020
+-- Compiling module PCplus4
+
+Top level modules:
+	PCplus4
+
+} {} {}} D:/nhomfap/Multiplexer.v {1 {vlog -work work -stats=none D:/nhomfap/Multiplexer.v
+Model Technology ModelSim - Intel FPGA Edition vlog 2020.1 Compiler 2020.02 Feb 28 2020
+-- Compiling module Multiplexer
+
+Top level modules:
+	Multiplexer
+
+} {} {}} D:/nhomfap/ALUControl.v {1 {vlog -work work -stats=none D:/nhomfap/ALUControl.v
+Model Technology ModelSim - Intel FPGA Edition vlog 2020.1 Compiler 2020.02 Feb 28 2020
+-- Compiling module ALUControl
+
+Top level modules:
+	ALUControl
+
+} {} {}} D:/nhomfap/Register_file.v {1 {vlog -work work -stats=none D:/nhomfap/Register_file.v
+Model Technology ModelSim - Intel FPGA Edition vlog 2020.1 Compiler 2020.02 Feb 28 2020
+-- Compiling module Register_file
+
+Top level modules:
+	Register_file
+
+} {} {}} D:/nhomfap/Control_Unit.v {1 {vlog -work work -stats=none D:/nhomfap/Control_Unit.v
+Model Technology ModelSim - Intel FPGA Edition vlog 2020.1 Compiler 2020.02 Feb 28 2020
+-- Compiling module Control_Unit
+
+Top level modules:
+	Control_Unit
+
+} {} {}} D:/nhomfap/RISCV_TOP.v {1 {vlog -work work -stats=none D:/nhomfap/RISCV_TOP.v
+Model Technology ModelSim - Intel FPGA Edition vlog 2020.1 Compiler 2020.02 Feb 28 2020
+-- Compiling module RISCV_TOP
+
+Top level modules:
+	RISCV_TOP
+
+} {} {}} D:/nhomfap/immediate_generator.v {1 {vlog -work work -stats=none D:/nhomfap/immediate_generator.v
+Model Technology ModelSim - Intel FPGA Edition vlog 2020.1 Compiler 2020.02 Feb 28 2020
+-- Compiling module immediate_generator
+
+Top level modules:
+	immediate_generator
+
+} {} {}} D:/nhomfap/ALU.v {1 {vlog -work work -stats=none D:/nhomfap/ALU.v
+Model Technology ModelSim - Intel FPGA Edition vlog 2020.1 Compiler 2020.02 Feb 28 2020
+-- Compiling module ALU
+
+Top level modules:
+	ALU
+
+} {} {}}
