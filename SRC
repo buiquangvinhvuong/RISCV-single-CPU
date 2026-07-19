@@ -1,0 +1,274 @@
+//ALU
+module ALU(
+    input  [31:0] a,
+    input  [31:0] b,
+    input  [3:0]  ALUCtrl,
+    output reg [31:0] result,
+    output Zero
+);
+    assign Zero = (result == 32'b0);
+
+    always @(*) begin
+        case (ALUCtrl)
+            4'b0010: result = a + b;
+            4'b0110: result = a - b;
+            4'b0000: result = a & b;
+            4'b0001: result = a | b;
+            4'b0011: result = a ^ b;
+            4'b0100: result = a << b[4:0];
+            4'b0101: result = a >> b[4:0];
+            4'b0111: result = $signed(a) >>> b[4:0];
+            4'b1000: result = ($signed(a) < $signed(b)) ? 32'b1 : 32'b0;
+            4'b1001: result = (a < b) ? 32'b1 : 32'b0; // sltu / sltiu
+            default: result = 32'b0;
+        endcase
+    end
+endmodule
+
+//ALUControl
+module ALUControl(
+    input  [1:0] ALUOp,
+    input  [2:0] funct3,
+    input funct7_5,
+    output reg [3:0] ALUCtrl
+);
+    
+    always @(*) begin
+        case (ALUOp)
+            2'b10: begin // R-type
+                case (funct3)
+                    3'b000: ALUCtrl = funct7_5 ? 4'b0110 : 4'b0010; // sub / add
+                    3'b111: ALUCtrl = 4'b0000; // and
+                    3'b110: ALUCtrl = 4'b0001; // or
+                    3'b100: ALUCtrl = 4'b0011; // xor
+                    3'b001: ALUCtrl = 4'b0100; // sll
+                    3'b101: ALUCtrl = funct7_5 ? 4'b0111 : 4'b0101; // sra / srl
+                    3'b010: ALUCtrl = 4'b1000; // slt
+                    3'b011: ALUCtrl = 4'b1001; // sltu
+                    default: ALUCtrl = 4'b0010;
+                endcase
+            end
+            2'b11: begin // I-type ALU
+                case (funct3)
+                    3'b000: ALUCtrl = 4'b0010; // addi
+                    3'b110: ALUCtrl = 4'b0001; // ori
+                    3'b111: ALUCtrl = 4'b0000; // andi
+                    3'b100: ALUCtrl = 4'b0011; // xori
+                    3'b001: ALUCtrl = 4'b0100; // slli
+                    3'b101: ALUCtrl = funct7_5 ? 4'b0111 : 4'b0101; // srai / srli
+                    3'b010: ALUCtrl = 4'b1000; // slti
+                    3'b011: ALUCtrl = 4'b1001; // sltiu
+                    default: ALUCtrl = 4'b0010;
+                endcase
+            end
+            default: ALUCtrl = 4'b0010;
+        endcase
+    end
+endmodule
+//Control_Unit
+module Control_Unit(
+    input  [6:0] opcode,
+    output reg RegWrite,
+    output reg ALUSrc,
+    output reg [1:0] ALUOp
+);
+    always @(*) begin
+        RegWrite = 0; ALUSrc = 0; ALUOp = 2'b00;
+
+        case (opcode)
+            7'b0110011: begin // R-type: add, sub, and, or, xor, sll, srl, sra, slt
+                RegWrite = 1; ALUSrc = 0; ALUOp = 2'b10;
+            end
+            7'b0010011: begin // I-type ALU: addi, ori, ...
+                RegWrite = 1; ALUSrc = 1; ALUOp = 2'b11;
+            end
+            default: ; 
+        endcase
+    end
+endmodule
+
+//immediate_generator
+module immediate_generator(
+    input  [31:0] instr,
+    output reg [31:0] imm
+);
+    wire [6:0] opcode = instr[6:0];
+
+    always @(*) begin
+        case (opcode)
+            7'b0010011: 
+                imm = {{20{instr[31]}}, instr[31:20]};
+            default:
+                imm = 32'b0;
+        endcase
+    end
+endmodule
+//
+module Instruction_Memory(
+    input  [31:0] addr,
+    output [31:0] instruction
+);
+    reg [31:0] mem [0:63];
+    integer k;
+
+    assign instruction = mem[addr[31:2]];
+
+    initial begin
+        // Setup: x1 = 12, x2 = 5
+        mem[0]  = {12'd12, 5'b00000, 3'b000, 5'b00001, 7'b0010011}; // addi x1, x0, 12
+        mem[1]  = {12'd5,  5'b00000, 3'b000, 5'b00010, 7'b0010011}; // addi x2, x0, 5
+
+        // R-type
+        mem[2]  = {7'b0000000, 5'b00010, 5'b00001, 3'b000, 5'b00011, 7'b0110011}; // add  x3, x1, x2
+        mem[3]  = {7'b0100000, 5'b00010, 5'b00001, 3'b000, 5'b00100, 7'b0110011}; // sub  x4, x1, x2
+        mem[4]  = {7'b0000000, 5'b00010, 5'b00001, 3'b111, 5'b00101, 7'b0110011}; // and  x5, x1, x2
+        mem[5]  = {7'b0000000, 5'b00010, 5'b00001, 3'b110, 5'b00110, 7'b0110011}; // or   x6, x1, x2
+        mem[6]  = {7'b0000000, 5'b00010, 5'b00001, 3'b100, 5'b00111, 7'b0110011}; // xor  x7, x1, x2
+        mem[7]  = {7'b0000000, 5'b00010, 5'b00001, 3'b001, 5'b01000, 7'b0110011}; // sll  x8, x1, x2
+        mem[8]  = {7'b0000000, 5'b00010, 5'b00001, 3'b101, 5'b01001, 7'b0110011}; // srl  x9, x1, x2
+        mem[9]  = {7'b0100000, 5'b00010, 5'b00001, 3'b101, 5'b01010, 7'b0110011}; // sra  x10, x1, x2
+        mem[10] = {7'b0000000, 5'b00010, 5'b00001, 3'b010, 5'b01011, 7'b0110011}; // slt  x11, x1, x2
+
+        // I-type ALU
+        mem[11] = {12'd5,  5'b00001, 3'b000, 5'b01100, 7'b0010011}; // addi x12, x1, 5
+        mem[12] = {12'd10, 5'b00001, 3'b110, 5'b01101, 7'b0010011}; // ori  x13, x1, 10
+
+        mem[13] = 32'b0; // NOP
+        mem[14] = 32'b0;
+
+
+        for (k = 15; k < 64; k = k + 1)
+            mem[k] = 32'b0;
+    end
+endmodule
+
+//Multiplexer
+
+module Multiplexer(
+    input  [31:0] in0,
+    input  [31:0] in1,
+    input sel,
+    output [31:0] out
+);
+    assign out = sel ? in1 : in0;
+endmodule
+
+//
+module PCplus4(
+    input  [31:0] pc_in,
+    output [31:0] pc_out
+);
+    assign pc_out = pc_in + 32'd4;
+endmodule
+
+//Program_counter
+module Program_counter(
+    input clk,
+    input rst,
+    input  [31:0] pc_in,
+    output reg [31:0] pc_out
+);
+    always @(posedge clk or posedge rst) begin
+        if (rst)
+            pc_out <= 32'b0;
+        else
+            pc_out <= pc_in;
+    end
+endmodule
+
+//Register_file
+module Register_file(
+    input clk,
+    input rst,
+    input RegWrite,
+    input  [4:0]  rs1,
+    input  [4:0]  rs2,
+    input  [4:0]  rd,
+    input  [31:0] wd,
+    output [31:0] rd1,
+    output [31:0] rd2
+);
+    reg [31:0] regs [0:31];
+    integer i;
+
+    assign rd1 = (rs1 == 5'b0) ? 32'b0 : regs[rs1];
+    assign rd2 = (rs2 == 5'b0) ? 32'b0 : regs[rs2];
+
+    always @(posedge clk or posedge rst) begin
+        if (rst) begin
+            for (i = 0; i < 32; i = i + 1)
+                regs[i] <= 32'b0;
+        end else if (RegWrite && rd != 5'b0) begin
+            regs[rd] <= wd;
+        end
+    end
+endmodule
+
+//RISCV_TOP
+module RISCV_TOP(
+    input clk,
+    input rst
+);
+    wire [31:0] pc_current, pc_plus4;
+    wire [31:0] instruction;
+    wire RegWrite, ALUSrc;
+    wire [1:0] ALUOp;
+    wire [3:0] ALUCtrl;
+    wire [31:0] reg_rd1, reg_rd2, imm, alu_b, alu_result;
+    wire zero_unused;
+
+    Program_counter PC (
+        .clk(clk), .rst(rst),
+        .pc_in(pc_plus4),   
+        .pc_out(pc_current)
+    );
+
+    PCplus4 PC4 (
+        .pc_in(pc_current),
+        .pc_out(pc_plus4)
+    );
+
+    Instruction_Memory IMEM (
+        .addr(pc_current),
+        .instruction(instruction)
+    );
+
+    Control_Unit CU (
+        .opcode(instruction[6:0]),
+        .RegWrite(RegWrite), .ALUSrc(ALUSrc),
+        .ALUOp(ALUOp)
+    );
+
+    Register_file RF (
+        .clk(clk), .rst(rst),
+        .RegWrite(RegWrite),
+        .rs1(instruction[19:15]), .rs2(instruction[24:20]), .rd(instruction[11:7]),
+        .wd(alu_result),          
+        .rd1(reg_rd1), .rd2(reg_rd2)
+    );
+
+    immediate_generator IMMGEN (
+        .instr(instruction),
+        .imm(imm)
+    );
+
+    Multiplexer ALU_MUX (
+        .in0(reg_rd2), .in1(imm),
+        .sel(ALUSrc),
+        .out(alu_b)
+    );
+
+    ALUControl ALUCTRL (
+        .ALUOp(ALUOp), .funct3(instruction[14:12]), .funct7_5(instruction[30]),
+        .ALUCtrl(ALUCtrl)
+    );
+
+    ALU ALU_UNIT (
+        .a(reg_rd1), .b(alu_b), .ALUCtrl(ALUCtrl),
+        .result(alu_result), .Zero(zero_unused)
+    );
+
+endmodule
+
+
+
